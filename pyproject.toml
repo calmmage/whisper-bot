@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "whisper-bot"
+version = "0.1.0"
+description = ""
+authors = ["Petr Lavrov <calmquant@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+mongoengine = "*"
+aiogram = "*"
+pydantic-settings = "*"
+pydub = "*"
+openai = "^0.28.0"
+loguru = "^0.7.2"
+bot-base = { git = "https://github.com/calmmage/bot-base.git", branch = "frozen-whisper-bot" }
+
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0.0"
+pandas = "*"
+black = "*"
+pytest = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
