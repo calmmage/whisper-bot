@@ -23,9 +23,10 @@ class WhisperTelegramBot(TelegramBot):
         self.logger.info(f"Processing audio message")
 
         transcript = await self._process_voice_message(message)
+        # todo: add file name, if present
+        response = f"Transcript: \n{transcript}"
 
-        # send the transcript back to the user
-        await message.answer(f"Transcript: {transcript}")
+        await self.send_safe(message.chat.id, response, message.message_id)
 
     async def bootstrap(self):
         self._dp.message(F.audio | F.voice)(self.process_audio)
