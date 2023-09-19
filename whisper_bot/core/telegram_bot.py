@@ -28,9 +28,9 @@ class WhisperTelegramBot(TelegramBot):
         await message.answer(f"Transcript: {transcript}")
 
     async def bootstrap(self):
-        await super().bootstrap()
-
         self._dp.message(F.audio | F.voice)(self.process_audio)
+
+        await super().bootstrap()
 
     async def chat_message_handler(self, message: types.Message):
         """
