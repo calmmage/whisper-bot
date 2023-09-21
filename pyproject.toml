@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "whisper-bot"
-version = "0.1.1"
+version = "0.2.0"
 description = ""
 authors = ["Petr Lavrov <calmquant@gmail.com>"]
 readme = "README.md"
@@ -20,6 +20,7 @@ jupyter = "^1.0.0"
 pandas = "*"
 black = "*"
 pytest = "*"
+tiktoken = "*"
 
 [build-system]
 requires = ["poetry-core"]
