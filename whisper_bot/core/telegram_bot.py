@@ -1,15 +1,16 @@
-# from whisper_bot.data_model.dm_pydantic import \
-#     SaveTelegramMessageRequest
-from typing import TYPE_CHECKING
-
 from aiogram import F
 from aiogram import types
+from datetime import datetime
+from textwrap import dedent
+from typing import TYPE_CHECKING
 
 from bot_base.core import mark_command
 from bot_base.core.telegram_bot import TelegramBot
-
 from whisper_bot.core.app_config import WhisperTelegramBotConfig
-from whisper_bot.utils.text_utils import merge_all_chunks, format_text_with_gpt
+from whisper_bot.utils.text_utils import (
+    merge_all_chunks,
+    format_text_with_gpt,
+)
 
 if TYPE_CHECKING:
     from whisper_bot.core import WhisperApp
@@ -17,24 +18,44 @@ if TYPE_CHECKING:
 
 class WhisperTelegramBot(TelegramBot):
     _config_class = WhisperTelegramBotConfig
+    app: "WhisperApp"
     recognized_hashtags = {"#ignore": {"ignore": True}}  #
+    UNAUTHORISED_RESPONSE = dedent(
+        """
+        You are not authorized to use this bot.
+        Ask @petr_lavrov for access.
+        """
+    )
 
     def __init__(self, config: _config_class, app: "WhisperApp" = None):
         super().__init__(config, app=app)
 
     async def process_audio(self, message: types.Message):
         self.logger.info(f"Processing audio message")
+        # todo: add an easter egg - add general 'easter egg' feature everywhere
+        placeholder = await message.answer(f"Transcribing audio")
+        chunks = await self._process_voice_message(
+            message,
+        )
+        raw_transcript = "\n\n".join(chunks)
+        self.logger.info(f"Raw transcript: {raw_transcript}")
+        filename = "raw_transcript_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
+        await self.send_safe(
+            message.chat.id, raw_transcript, message.message_id, filename=filename
+        )
 
-        transcript = await self._process_voice_message(message)
-        # todo: add file name, if present
-        response = f"Transcript: \n{transcript}"
+        if self.config.format_transcript_automatically:
+            transcript = await self.app.merge_and_format_chunks(chunks)
+            filename = f"transcript_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
+            await self.send_safe(
+                message.chat.id, transcript, message.message_id, filename=filename
+            )
 
-        await self.send_safe(message.chat.id, response, message.message_id)
+        await placeholder.delete()
 
-    async def bootstrap(self):
-        self._dp.message(F.audio | F.voice)(self.process_audio)
-
-        await super().bootstrap()
+    # ------------------------------------------------------------
+    # Command 1: Merge chunks
+    # ------------------------------------------------------------
 
     async def chat_message_handler(self, message: types.Message):
         """
@@ -54,25 +75,12 @@ class WhisperTelegramBot(TelegramBot):
 
         return message_text
 
-    # ------------------------------------------------------------
-    # Command 1: Merge chunks
-    # ------------------------------------------------------------
-
-    async def _extract_text_from_message(self, message: types.Message):
-        if message.document:
-            self.logger.info(f"Received file: {message.document.file_name}")
-            text = await self._aiogram_bot.download(message.document.file_id)
-            self.logger.debug(f"File downloaded: {text}")
-        else:
-            text = await self._extract_message_text(message)
-        return text
-
-    @mark_command("mergeChunks")
+    @mark_command("merge_chunks")
     async def merge_chunks_command(self, message: types.Message):
         """
         Merge chunks command
         """
-        self.logger.info(f"Received mergeChunks command")
+        self.logger.info(f"Received merge_chunks command")
         # step 1: get message text
         text = await self._extract_text_from_message(message)
 
@@ -80,44 +88,96 @@ class WhisperTelegramBot(TelegramBot):
         chunks = text.split("\n\n")
 
         # step 3: merge chunks
-        result = await merge_all_chunks(chunks, logger=self.logger)
+        result = merge_all_chunks(chunks, logger=self.logger)
         self.logger.info(f"Result: {result}")
 
         # send back the result
-        await self.send_safe(message.chat.id, result, message.message_id)
+        filename = f"merged_text_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
+        await self.send_safe(
+            message.chat.id, result, message.message_id, filename=filename
+        )
 
     # ------------------------------------------------------------
     # Command 2: Format text
     # ------------------------------------------------------------
 
-    @mark_command("formatText")
+    @mark_command("format_text")
     async def format_text_command(self, message: types.Message):
         """
         Format the text with GPT
         """
-        self.logger.info(f"Received formatText command")
+        self.logger.info(f"Received format_text command")
 
         # extract text from the message - value or file
         text = await self._extract_text_from_message(message)
 
         # format the text
-        result = await format_text_with_gpt(text)
+        result = await format_text_with_gpt(
+            text,
+            model=self.app.config.formatting_model,
+            fix_grammar_and_typos=self.app.config.fix_grammar_and_typos,
+            logger=self.logger,
+        )
         self.logger.info(f"Result: {result}")
 
         # send back the result
-        await self.send_safe(message.chat.id, result, message.message_id)
+        filename = f"formatted_text_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
+        await self.send_safe(
+            message.chat.id, result, message.message_id, filename=filename
+        )
+
+    @mark_command("fix_grammar")
+    async def fix_grammar_command(self, message: types.Message):
+        self.logger.info(f"Received fix_grammar command")
+
+        # extract text from the message - value or file
+        text = await self._extract_text_from_message(message)
+
+        # format the text
+        result = await format_text_with_gpt(
+            text,
+            model=self.app.config.formatting_model,
+            fix_grammar_and_typos=True,
+            logger=self.logger,
+        )
+        self.logger.info(f"Result: {result}")
+
+        # send back the result
+        filename = f"formatted_text_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
+        await self.send_safe(
+            message.chat.id, result, message.message_id, filename=filename
+        )
 
     # ------------------------------------------------------------
     # Command 3: Merge and format
     # ------------------------------------------------------------
 
-    async def _merge_and_format_chunks(self, chunks):
-        # step 1:
+    @mark_command("merge_and_format")
+    async def merge_and_format_command(self, message: types.Message):
+        # step 1: extract text from the message - value or file
+        text = await self._extract_text_from_message(message)
+
+        # step 2: split chunks
+        chunks = text.split("\n\n")
+
         # step 3: merge chunks
-        result = await merge_all_chunks(chunks, logger=self.logger)
+        result = await self.app.merge_and_format_chunks(chunks)
         self.logger.info(f"Result: {result}")
 
-        # step 4: format the text
-        result = await format_text_with_gpt(result)
-        self.logger.info(f"Result: {result}")
-        return result
+        # send back the result
+        filename = f"formatted_text_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
+        await self.send_safe(
+            message.chat.id, result, message.message_id, filename=filename
+        )
+
+    # ------------------------------------------------------------
+    # Registering handlers
+    # ------------------------------------------------------------
+    async def bootstrap(self):
+        self._dp.message(F.audio | F.voice)(self.process_audio)
+        self.register_command(self.merge_chunks_command, "merge_chunks")
+        self.register_command(self.format_text_command, "format_text")
+        self.register_command(self.fix_grammar_command, "fix_grammar")
+        self.register_command(self.merge_and_format_command, "merge_and_format")
+
+        await super().bootstrap()

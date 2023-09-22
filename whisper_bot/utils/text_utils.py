@@ -1,3 +1,5 @@
+from typing import Iterable
+
 from functools import reduce, partial
 
 import loguru
@@ -84,25 +86,28 @@ def merge_two_chunks(
 
     logger.debug(f"{ending=}")
     logger.debug(f"{beginning=}")
-    logger.debug("Overlap size:", match.size)
+    logger.debug(f"Overlap size: {match.size}")
     if match.size < match_cutoff:
         logger.warning("Overlap is too small, merging as is")
         return chunk1 + chunk2
 
     segment = ending[match.a : match.a + match.size].strip()
-    logger.debug("Overlap text:", segment)
+    logger.debug(f"Overlap text: {segment}")
 
     pos1 = find_segment_pos(segment, chunk1[-N:].lower())
     pos1 = (pos1[0] + len(chunk1) - N, pos1[1] + len(chunk1) - N)
     pos2 = find_segment_pos(segment, chunk2[:M].lower())
 
-    logger.debug("text in ending:", chunk1[pos1[0] : pos1[1]])
-    logger.debug("text in beginning:", chunk2[pos2[0] : pos2[1]])
+    logger.debug(f"text in ending: {chunk1[pos1[0] : pos1[1]]}")
+    logger.debug(f"text in beginning: {chunk2[pos2[0] : pos2[1]]}")
     return chunk1[: pos1[1]] + chunk2[pos2[1] :]
 
 
 def merge_all_chunks(
-    chunks, buffer=DEFAULT_BUFFER, match_cutoff=DEFAULT_MATCH_CUTOFF, logger=None
+    chunks: Iterable,
+    buffer=DEFAULT_BUFFER,
+    match_cutoff=DEFAULT_MATCH_CUTOFF,
+    logger=None,
 ):
     """merge chunks using reduce method"""
     return reduce(
@@ -113,17 +118,33 @@ def merge_all_chunks(
     )
 
 
-FORMAT_TRANSCRIPT_QUERY = """
-You're voice message parsing assistant. Your goal is:
+FORMAT_TEXT_COMMAND = """
+You're text formatting assistant. Your goal is:
 - Add rich punctuation - new lines, quotes, dots and commas where appropriate
 - Break the text into paragraphs 
+
+"""
+FIX_GRAMMAR_COMMAND = """
+- Fix grammar and typos
+"""
+KEEP_GRAMMAR_COMMAND = """
 - keep the original text word-to-word, with only minor changes where absolutely necessary
 """
 
 
-async def format_text_with_gpt(text, model="gpt-3.5-turbo"):
+async def format_text_with_gpt(
+    text, model="gpt-3.5-turbo", fix_grammar_and_typos=False, logger=None
+):
+    if logger is None:
+        logger = loguru.logger
     token_limit = token_limit_by_model[model]
     token_count = get_token_count(text, model=model)
+    logger.debug(f"{token_count=}, {token_limit=}")
+
     if token_count > token_limit / 2:
         raise ValueError(f"Text is too long: {token_count} > {token_limit / 2}")
-    return await arun_command_with_gpt(FORMAT_TRANSCRIPT_QUERY, text, model=model)
+    if fix_grammar_and_typos:
+        command = FORMAT_TEXT_COMMAND + FIX_GRAMMAR_COMMAND
+    else:
+        command = FORMAT_TEXT_COMMAND + KEEP_GRAMMAR_COMMAND
+    return await arun_command_with_gpt(command, text, model=model)

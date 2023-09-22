@@ -1,14 +1,14 @@
-from bot_base.core import AppConfig, DatabaseConfig, TelegramBotConfig
-
-
-class WhisperDatabaseConfig(DatabaseConfig):
-    pass
+from bot_base.core import AppConfig, TelegramBotConfig
 
 
 class WhisperTelegramBotConfig(TelegramBotConfig):
-    pass
+    format_transcript_automatically: bool = True
 
 
 class WhisperAppConfig(AppConfig):
-    _database_config_class = WhisperDatabaseConfig
-    _telegram_bot_config_class = WhisperTelegramBotConfig
+    telegram_bot: WhisperTelegramBotConfig = WhisperTelegramBotConfig()
+
+    formatting_model: str = "gpt-3.5-turbo"  # "gpt-3.5-turbo-16k" - bad quality
+    summary_model: str = "gpt-4"
+
+    fix_grammar_and_typos: bool = False
