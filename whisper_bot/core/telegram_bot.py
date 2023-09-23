@@ -39,7 +39,7 @@ class WhisperTelegramBot(TelegramBot):
         )
         raw_transcript = "\n\n".join(chunks)
         self.logger.info(f"Raw transcript: {raw_transcript}")
-        filename = "raw_transcript_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
+        filename = f"raw_transcript_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
         await self.send_safe(
             message.chat.id, raw_transcript, message.message_id, filename=filename
         )
@@ -64,9 +64,12 @@ class WhisperTelegramBot(TelegramBot):
         Replace with your own implementation
         """
         message_text = await self._extract_message_text(message)
-        self.logger.info(f"Received message: {message_text}")
-        if self._multi_message_mode:
-            self.messages_stack.append(message)
+        self.logger.info(
+            f"Received message", user=message.from_user.username, data=message_text
+        )
+        chat_id = message.chat.id
+        if self._multi_message_mode[chat_id]:
+            self.messages_stack[chat_id].append(message)
         else:
             # todo: send back a 'help' message
             await message.answer(
