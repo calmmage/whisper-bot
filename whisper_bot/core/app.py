@@ -29,17 +29,21 @@ class WhisperApp(App):
 
     async def merge_and_format_chunks(self, chunks):
         # step 1: group chunks by size
+        self.logger.info(f"Splitting chunks by size")
         token_limit = token_limit_by_model[self.formatting_model]
         groups = split_by_weight(
             chunks, partial(get_token_count, model=self.formatting_model), token_limit
         )
         # step 2: merge chunks in each group
+        self.logger.info(f"Merging chunks in each group")
         merged_groups = map(merge_all_chunks, groups)
         # step 3: format each group
+        self.logger.info(f"Formatting each group")
         formatted_groups = await amap_gpt_command(
             merged_groups, FORMAT_TEXT_COMMAND, model=self.formatting_model
         )
         # step 4: merge all groups
+        self.logger.info(f"Merging all groups")
         result = merge_all_chunks(formatted_groups)
 
         return result
