@@ -38,7 +38,7 @@ class WhisperTelegramBot(TelegramBot):
             message,
         )
         raw_transcript = "\n\n".join(chunks)
-        self.logger.info(f"Raw transcript: {raw_transcript}")
+        self.logger.info(f"Raw transcript", data=raw_transcript)
         filename = f"raw_transcript_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
         await self.send_safe(
             message.chat.id, raw_transcript, message.message_id, filename=filename
@@ -46,6 +46,7 @@ class WhisperTelegramBot(TelegramBot):
 
         if self.config.format_transcript_automatically:
             transcript = await self.app.merge_and_format_chunks(chunks)
+            self.logger.info("Transcript", data=transcript)
             filename = f"transcript_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
             await self.send_safe(
                 message.chat.id, transcript, message.message_id, filename=filename
