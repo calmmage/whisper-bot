@@ -88,6 +88,9 @@ class WhisperTelegramBot(TelegramBot):
         # step 1: get message text
         text = await self._extract_text_from_message(message)
 
+        # remove command from text
+        if text.startswith("/"):  _, text = text.split(maxsplit=1)
+
         # step 2: split chunks
         chunks = text.split("\n\n")
 
@@ -115,6 +118,9 @@ class WhisperTelegramBot(TelegramBot):
         # extract text from the message - value or file
         text = await self._extract_text_from_message(message)
 
+        # remove command from text
+        if text.startswith("/"):  _, text = text.split(maxsplit=1)
+
         # format the text
         result = await format_text_with_gpt(
             text,
@@ -136,6 +142,9 @@ class WhisperTelegramBot(TelegramBot):
 
         # extract text from the message - value or file
         text = await self._extract_text_from_message(message)
+
+        # remove command from text
+        if text.startswith("/"):  _, text = text.split(maxsplit=1)
 
         # format the text
         result = await format_text_with_gpt(
@@ -160,6 +169,10 @@ class WhisperTelegramBot(TelegramBot):
     async def merge_and_format_command(self, message: types.Message):
         # step 1: extract text from the message - value or file
         text = await self._extract_text_from_message(message)
+
+        # remove /merge_and_format command from text
+        if text.startswith("/"):
+            _, text = text.split(maxsplit=1)
 
         # step 2: split chunks
         chunks = text.split("\n\n")

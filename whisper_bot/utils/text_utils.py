@@ -1,9 +1,6 @@
-from typing import Iterable
-
-from functools import reduce, partial
-
 import loguru
 from difflib import SequenceMatcher
+from typing import Iterable
 
 from bot_base.utils.gpt_utils import (
     arun_command_with_gpt,
@@ -61,8 +58,8 @@ def find_segment_pos(segment: str, text: str):
     return beg, j
 
 
-DEFAULT_BUFFER = 30
-DEFAULT_MATCH_CUTOFF = 10
+DEFAULT_BUFFER = 25
+DEFAULT_MATCH_CUTOFF = 15
 
 
 def merge_two_chunks(
@@ -87,12 +84,12 @@ def merge_two_chunks(
     logger.debug(f"{ending=}")
     logger.debug(f"{beginning=}")
     logger.debug(f"Overlap size: {match.size}")
+    segment = ending[match.a : match.a + match.size].strip()
+    if match.size > 1:
+        logger.debug(f"Overlap text: {segment}")
     if match.size < match_cutoff:
         logger.warning("Overlap is too small, merging as is")
         return chunk1 + chunk2
-
-    segment = ending[match.a : match.a + match.size].strip()
-    logger.debug(f"Overlap text: {segment}")
 
     pos1 = find_segment_pos(segment, chunk1[-N:].lower())
     pos1 = (pos1[0] + len(chunk1) - N, pos1[1] + len(chunk1) - N)
@@ -110,19 +107,19 @@ def merge_all_chunks(
     logger=None,
 ):
     """merge chunks using reduce method"""
-    return reduce(
-        partial(
-            merge_two_chunks, buffer=buffer, match_cutoff=match_cutoff, logger=logger
-        ),
-        chunks,
-    )
+    result = ""
+    for chunk in chunks:
+        result = merge_two_chunks(
+            result, chunk, buffer=buffer, match_cutoff=match_cutoff, logger=logger
+        )
+    return result
 
 
 FORMAT_TEXT_COMMAND = """
 You're text formatting assistant. Your goal is:
 - Add rich punctuation - new lines, quotes, dots and commas where appropriate
-- Break the text into paragraphs 
-
+- Break the text into paragraphs using double new lines
+Output language: Same as input
 """
 FIX_GRAMMAR_COMMAND = """
 - Fix grammar and typos
