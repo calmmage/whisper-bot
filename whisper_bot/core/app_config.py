@@ -3,6 +3,7 @@ from bot_base.core import AppConfig, TelegramBotConfig
 
 class WhisperTelegramBotConfig(TelegramBotConfig):
     format_transcript_automatically: bool = True
+    send_raw_transcript: bool = False
 
 
 class WhisperAppConfig(AppConfig):
