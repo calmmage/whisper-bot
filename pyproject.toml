@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "whisper-bot"
-version = "0.2.6"  # Add 'send raw transcript' config flag, default=False
+version = "0.3.0"  # Migrate to new bot base
 description = ""
 authors = ["Petr Lavrov <calmquant@gmail.com>"]
 readme = "README.md"

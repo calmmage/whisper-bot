@@ -1,11 +1,14 @@
-from aiogram import F
-from aiogram import types
 from datetime import datetime
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
+from aiogram import F
+from aiogram import types
+
 from bot_base.core import mark_command
 from bot_base.core.telegram_bot import TelegramBot
+from bot_base.utils.text_utils import DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP, \
+    split_text_with_overlap
 from whisper_bot.core.app_config import WhisperTelegramBotConfig
 from whisper_bot.utils.text_utils import (
     merge_all_chunks,
@@ -42,15 +45,21 @@ class WhisperTelegramBot(TelegramBot):
         if self.config.send_raw_transcript:
             filename = f"raw_transcript_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
             await self.send_safe(
-                message.chat.id, raw_transcript, message.message_id, filename=filename
+                chat_id=message.chat.id, text=raw_transcript,
+                reply_to_message_id=message.message_id,
+                filename=filename
             )
+
+        # subsplit large chunks
+        chunks = self.subsplit_large_chunks(chunks)
 
         if self.config.format_transcript_automatically:
             transcript = await self.app.merge_and_format_chunks(chunks)
             self.logger.info("Transcript", data=transcript)
             filename = f"transcript_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
             await self.send_safe(
-                message.chat.id, transcript, message.message_id, filename=filename
+                chat_id=message.chat.id, text=transcript, reply_to_message_id=message.message_id,
+                filename=filename
             )
 
         await placeholder.delete()
@@ -80,7 +89,15 @@ class WhisperTelegramBot(TelegramBot):
 
         return message_text
 
-    @mark_command("merge_chunks")
+    @staticmethod
+    def subsplit_large_chunks(chunks, chunk_limit=DEFAULT_CHUNK_SIZE,
+                              overlap=DEFAULT_CHUNK_OVERLAP):
+        res_chunks = []
+        for chunk in chunks:
+            res_chunks += split_text_with_overlap(chunk, chunk_limit, overlap)
+        return res_chunks
+
+    @mark_command("merge_chunks", description="Merge overlapping chunks")
     async def merge_chunks_command(self, message: types.Message):
         """
         Merge chunks command
@@ -95,6 +112,9 @@ class WhisperTelegramBot(TelegramBot):
         # step 2: split chunks
         chunks = text.split("\n\n")
 
+        # subsplit large chunks
+        chunks = self.subsplit_large_chunks(chunks)
+
         # step 3: merge chunks
         result = merge_all_chunks(chunks, logger=self.logger)
         self.logger.info(f"Result: {result}")
@@ -102,7 +122,8 @@ class WhisperTelegramBot(TelegramBot):
         # send back the result
         filename = f"merged_text_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
         await self.send_safe(
-            message.chat.id, result, message.message_id, filename=filename
+            chat_id=message.chat.id, text=result, reply_to_message_id=message.message_id,
+            filename=filename
         )
 
     # ------------------------------------------------------------
@@ -166,7 +187,7 @@ class WhisperTelegramBot(TelegramBot):
     # Command 3: Merge and format
     # ------------------------------------------------------------
 
-    @mark_command("merge_and_format")
+    @mark_command("merge_and_format", description="Merge and format text chunks")
     async def merge_and_format_command(self, message: types.Message):
         # step 1: extract text from the message - value or file
         text = await self._extract_text_from_message(message)
@@ -193,9 +214,4 @@ class WhisperTelegramBot(TelegramBot):
     # ------------------------------------------------------------
     async def bootstrap(self):
         self._dp.message(F.audio | F.voice)(self.process_audio)
-        self.register_command(self.merge_chunks_command, "merge_chunks")
-        self.register_command(self.format_text_command, "format_text")
-        self.register_command(self.fix_grammar_command, "fix_grammar")
-        self.register_command(self.merge_and_format_command, "merge_and_format")
-
         await super().bootstrap()
