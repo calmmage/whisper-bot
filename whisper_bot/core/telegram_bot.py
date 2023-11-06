@@ -155,7 +155,8 @@ class WhisperTelegramBot(TelegramBot):
         # send back the result
         filename = f"formatted_text_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
         await self.send_safe(
-            message.chat.id, result, message.message_id, filename=filename
+            chat_id=message.chat.id, text=result, reply_to_message_id=message.message_id,
+            filename=filename
         )
 
     @mark_command("fix_grammar")
@@ -180,7 +181,8 @@ class WhisperTelegramBot(TelegramBot):
         # send back the result
         filename = f"formatted_text_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
         await self.send_safe(
-            message.chat.id, result, message.message_id, filename=filename
+            chat_id=message.chat.id, text=result, reply_to_message_id=message.message_id,
+            filename=filename
         )
 
     # ------------------------------------------------------------
@@ -206,7 +208,8 @@ class WhisperTelegramBot(TelegramBot):
         # send back the result
         filename = f"formatted_text_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
         await self.send_safe(
-            message.chat.id, result, message.message_id, filename=filename
+            chat_id=message.chat.id, text=result, reply_to_message_id=message.message_id,
+            filename=filename
         )
 
     # ------------------------------------------------------------

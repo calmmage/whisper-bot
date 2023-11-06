@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "whisper-bot"
-version = "0.3.0"  # Migrate to new bot base
+version = "0.3.1"  # rework audio parser for memory efficiency
 description = ""
 authors = ["Petr Lavrov <calmquant@gmail.com>"]
 readme = "README.md"
