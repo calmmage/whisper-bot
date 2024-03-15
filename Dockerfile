@@ -6,7 +6,7 @@ RUN apt-get update && \
     apt-get install -y ffmpeg && \
     rm -rf /var/lib/apt/lists/*
 
-RUN apt-get install -y gcc
+RUN apt-get install -y build-essential
 
 # Set the working directory in the container
 WORKDIR /app
