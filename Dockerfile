@@ -5,6 +5,9 @@ FROM python:3.11-slim-buster
 RUN apt-get update && \
     apt-get install -y ffmpeg && \
     rm -rf /var/lib/apt/lists/*
+
+RUN apt-get install -y gcc
+
 # Set the working directory in the container
 WORKDIR /app
 
