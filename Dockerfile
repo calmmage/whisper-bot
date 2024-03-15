@@ -3,10 +3,8 @@ FROM python:3.11-slim-buster
 
 # Update and install FFmpeg
 RUN apt-get update && \
-    apt-get install -y ffmpeg && \
+    apt-get install -y ffmpeg gcc build-essential && \
     rm -rf /var/lib/apt/lists/*
-
-RUN apt-get install -y build-essential
 
 # Set the working directory in the container
 WORKDIR /app
