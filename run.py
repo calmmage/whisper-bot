@@ -1,16 +1,9 @@
-# run the app
-from bot_base.data_model.mongo_utils import connect_to_db
-from bot_base.utils.logging_utils import setup_logger
-from whisper_bot.core.app import WhisperApp
+import asyncio
 from dotenv import load_dotenv
 
+load_dotenv()
+from whisper_bot.bot import bot, dp
+
+
 if __name__ == "__main__":
-    load_dotenv()
-    # connect to db
-    connect_to_db()
-
-    # setup logger
-    setup_logger()
-
-    app = WhisperApp()
-    app.run()
+    asyncio.run(dp.start_polling(bot))

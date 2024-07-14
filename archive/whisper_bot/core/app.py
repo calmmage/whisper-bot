@@ -3,8 +3,6 @@ WhisperApp class
 - Database for storing processed whispers and logs
 -
 """
-from functools import partial
-
 from bot_base.core import App
 from bot_base.utils.gpt_utils import (
     split_by_weight,
@@ -12,6 +10,7 @@ from bot_base.utils.gpt_utils import (
     amap_gpt_command,
     token_limit_by_model,
 )
+from functools import partial
 from whisper_bot.core import WhisperAppConfig
 from whisper_bot.core import WhisperTelegramBot
 from whisper_bot.core.app_config import WhisperTelegramBotConfig
@@ -37,7 +36,9 @@ class WhisperApp(App):
         )
         # step 2: merge chunks in each group
         self.logger.info(f"Merging chunks in each group")
-        merged_groups = [merge_all_chunks(group, logger=self.logger) for group in groups]
+        merged_groups = [
+            merge_all_chunks(group, logger=self.logger) for group in groups
+        ]
         # step 3: format each group
         self.logger.info(f"Formatting each group")
         formatted_groups = await amap_gpt_command(

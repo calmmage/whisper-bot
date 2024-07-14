@@ -1,14 +1,15 @@
+from aiogram import F
+from aiogram import types
+from bot_base.core import mark_command
+from bot_base.core.telegram_bot import TelegramBot
+from bot_base.utils.text_utils import (
+    DEFAULT_CHUNK_SIZE,
+    DEFAULT_CHUNK_OVERLAP,
+    split_text_with_overlap,
+)
 from datetime import datetime
 from textwrap import dedent
 from typing import TYPE_CHECKING
-
-from aiogram import F
-from aiogram import types
-
-from bot_base.core import mark_command
-from bot_base.core.telegram_bot import TelegramBot
-from bot_base.utils.text_utils import DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP, \
-    split_text_with_overlap
 from whisper_bot.core.app_config import WhisperTelegramBotConfig
 from whisper_bot.utils.text_utils import (
     merge_all_chunks,
@@ -43,11 +44,14 @@ class WhisperTelegramBot(TelegramBot):
         raw_transcript = "\n\n".join(chunks)
         self.logger.info(f"Raw transcript", data=raw_transcript)
         if self.config.send_raw_transcript:
-            filename = f"raw_transcript_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
+            filename = (
+                f"raw_transcript_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
+            )
             await self.send_safe(
-                chat_id=message.chat.id, text=raw_transcript,
+                chat_id=message.chat.id,
+                text=raw_transcript,
                 reply_to_message_id=message.message_id,
-                filename=filename
+                filename=filename,
             )
 
         # subsplit large chunks
@@ -58,8 +62,10 @@ class WhisperTelegramBot(TelegramBot):
             self.logger.info("Transcript", data=transcript)
             filename = f"transcript_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
             await self.send_safe(
-                chat_id=message.chat.id, text=transcript, reply_to_message_id=message.message_id,
-                filename=filename
+                chat_id=message.chat.id,
+                text=transcript,
+                reply_to_message_id=message.message_id,
+                filename=filename,
             )
 
         await placeholder.delete()
@@ -90,8 +96,9 @@ class WhisperTelegramBot(TelegramBot):
         return message_text
 
     @staticmethod
-    def subsplit_large_chunks(chunks, chunk_limit=DEFAULT_CHUNK_SIZE,
-                              overlap=DEFAULT_CHUNK_OVERLAP):
+    def subsplit_large_chunks(
+        chunks, chunk_limit=DEFAULT_CHUNK_SIZE, overlap=DEFAULT_CHUNK_OVERLAP
+    ):
         res_chunks = []
         for chunk in chunks:
             res_chunks += split_text_with_overlap(chunk, chunk_limit, overlap)
@@ -107,7 +114,8 @@ class WhisperTelegramBot(TelegramBot):
         text = await self._extract_text_from_message(message)
 
         # remove command from text
-        if text.startswith("/"):  _, text = text.split(maxsplit=1)
+        if text.startswith("/"):
+            _, text = text.split(maxsplit=1)
 
         # step 2: split chunks
         chunks = text.split("\n\n")
@@ -122,8 +130,10 @@ class WhisperTelegramBot(TelegramBot):
         # send back the result
         filename = f"merged_text_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
         await self.send_safe(
-            chat_id=message.chat.id, text=result, reply_to_message_id=message.message_id,
-            filename=filename
+            chat_id=message.chat.id,
+            text=result,
+            reply_to_message_id=message.message_id,
+            filename=filename,
         )
 
     # ------------------------------------------------------------
@@ -141,7 +151,8 @@ class WhisperTelegramBot(TelegramBot):
         text = await self._extract_text_from_message(message)
 
         # remove command from text
-        if text.startswith("/"):  _, text = text.split(maxsplit=1)
+        if text.startswith("/"):
+            _, text = text.split(maxsplit=1)
 
         # format the text
         result = await format_text_with_gpt(
@@ -155,8 +166,10 @@ class WhisperTelegramBot(TelegramBot):
         # send back the result
         filename = f"formatted_text_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
         await self.send_safe(
-            chat_id=message.chat.id, text=result, reply_to_message_id=message.message_id,
-            filename=filename
+            chat_id=message.chat.id,
+            text=result,
+            reply_to_message_id=message.message_id,
+            filename=filename,
         )
 
     @mark_command("fix_grammar")
@@ -167,7 +180,8 @@ class WhisperTelegramBot(TelegramBot):
         text = await self._extract_text_from_message(message)
 
         # remove command from text
-        if text.startswith("/"):  _, text = text.split(maxsplit=1)
+        if text.startswith("/"):
+            _, text = text.split(maxsplit=1)
 
         # format the text
         result = await format_text_with_gpt(
@@ -181,8 +195,10 @@ class WhisperTelegramBot(TelegramBot):
         # send back the result
         filename = f"formatted_text_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
         await self.send_safe(
-            chat_id=message.chat.id, text=result, reply_to_message_id=message.message_id,
-            filename=filename
+            chat_id=message.chat.id,
+            text=result,
+            reply_to_message_id=message.message_id,
+            filename=filename,
         )
 
     # ------------------------------------------------------------
@@ -208,8 +224,10 @@ class WhisperTelegramBot(TelegramBot):
         # send back the result
         filename = f"formatted_text_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
         await self.send_safe(
-            chat_id=message.chat.id, text=result, reply_to_message_id=message.message_id,
-            filename=filename
+            chat_id=message.chat.id,
+            text=result,
+            reply_to_message_id=message.message_id,
+            filename=filename,
         )
 
     # ------------------------------------------------------------

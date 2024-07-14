@@ -1,12 +1,11 @@
 import loguru
-from difflib import SequenceMatcher
-from typing import Iterable
-
 from bot_base.utils.gpt_utils import (
     arun_command_with_gpt,
     token_limit_by_model,
     get_token_count,
 )
+from difflib import SequenceMatcher
+from typing import Iterable
 
 
 def normalize_text(text):

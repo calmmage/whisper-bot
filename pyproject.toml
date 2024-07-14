@@ -1,23 +1,21 @@
 [tool.poetry]
 name = "whisper-bot"
-version = "0.3.1"  # rework audio parser for memory efficiency
+version = "2.0.0"  # rework audio parser for memory efficiency
 description = ""
-authors = ["Petr Lavrov <calmquant@gmail.com>"]
+authors = ["Petr Lavrov <petr.b.lavrov@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
-mongoengine = "*"
-aiogram = "*"
-pydantic-settings = "*"
-pydub = "*"
-openai = "^0.28.0"
-loguru = "^0.7.2"
-bot-base = { git = "https://github.com/calmmage/bot-base.git", branch = "frozen-whisper-bot" }
+python = "^3.12"
+aiogram = "^3.10.0"
+pydub = "^0.25.1"
+openai = "^1.35.13"
+bot-lib = { git = "https://github.com/calmmage/bot-lib.git", branch = "main" }
+tgcrypto = "^1.2.5"
+ffprobe = "^0.5"
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
-pandas = "*"
 black = "*"
 pytest = "*"
 

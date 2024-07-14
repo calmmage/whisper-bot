@@ -1,6 +1,5 @@
-import pickle
-
 import openai
+import pickle
 from loguru import logger
 from pydub import AudioSegment
 from pydub.silence import detect_silence
